@@ -1,4 +1,6 @@
+import os.path
 import random
+
 
 import pygame as pg
 
@@ -34,7 +36,7 @@ def reset_game():
 
 ground_scroll = 0
 velocity = 0
-pipe_gap = 150
+pipe_gap = 175
 game_over = False
 pipe_freq = 1550  # mili-seconds
 pipe_pass = False
@@ -47,13 +49,15 @@ font = pg.font.SysFont("bauhaus 93", 60)
 red = (255, 70, 220)
 
 # displacement of x-axis of the ground.png
-scroll_speed = 3
+scroll_speed = 4
 # how fast is the displacement taking place
 
 # loading images
 bg = pg.image.load("img/bg.png")
 ground_img = pg.image.load("img/ground.png")
 butt_img = pg.image.load("img/restart.png")
+hit_snd = pg.mixer.Sound("hit.ogg")
+
 
 
 class bird(pg.sprite.Sprite):
@@ -78,12 +82,13 @@ class bird(pg.sprite.Sprite):
     def update(self, up=0):
         if start == True:
             self.velocity += 0.2
-            if self.velocity >= 9.8:
-                self.velocity = 9.8
+            if self.velocity >= 8:
+                self.velocity = 8
             if up == 1:
-                self.velocity = -5
+                self.velocity = -6
             if self.rect.bottom <= 768 and self.rect.top > 0:
                 self.rect.y += int(self.velocity)
+
 
         # print(self.velocity)
 
@@ -147,26 +152,35 @@ class button(pg.sprite.Sprite):
 
 bird_group = pg.sprite.Group()
 pipe_group = pg.sprite.Group()
+
 butt = button(int(65 + SCREEN_WIDTH / 2), SCREEN_HEIGHT // 2, butt_img)
 
 jignesh = bird(100, SCREEN_HEIGHT // 2)
+
 
 bird_group.add(jignesh)
 
 run = True
 start = False
 game_over = False
+cnt=0
 """ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~MAIN LOOP~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
 while run:
 
     clock.tick(fps)
     # draw a background
     screen.blit(bg, (0, 0))
-    if game_over:
+    if game_over or bird_group.update() ==0:
+
+        if(cnt ==0):
+            cnt=1
+            pg.mixer.Sound.play(hit_snd)
+
         butt.draw()
         if butt.draw() == True:
             reset_game()
             score = 0
+            cnt=0
 
             game_over = False
 
@@ -185,14 +199,18 @@ while run:
     # print(score)
 
     screen.blit(ground_img, (ground_scroll, 768))
+
     if game_over == False:
         bird_group.draw(screen)
         bird_group.update()
 
         pipe_group.draw(screen)
         pipe_group.update()
+        if bird_group.sprites()[0].rect.y > 733:
+            game_over = True
 
         if pg.sprite.groupcollide(pipe_group, bird_group, False, False) or jignesh.rect.top < 0:
+
             game_over = True
 
         time_now = pg.time.get_ticks()
@@ -227,3 +245,5 @@ while run:
     pg.display.update()
 
     pg.display.flip()
+
+
